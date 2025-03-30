@@ -39,14 +39,6 @@
         group: ec2-user
         mode: '0755'
 
-    - name: Ensure Prometheus directory exists
-      file:
-        path: /opt/prometheus
-        state: directory
-        owner: ec2-user
-        group: ec2-user
-        mode: '0755'
-
     - name: Download Prometheus
       get_url:
         url: "https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz"
@@ -57,91 +49,4 @@
         src: /tmp/prometheus.tar.gz
         dest: /opt/prometheus
         remote_src: yes
-        extra_opts: [--strip-components=1]  # Removes parent directory inside archive
-
-    - name: Ensure Prometheus binary is executable
-      file:
-        path: /opt/prometheus/prometheus
-        mode: '0755'
-
-- name: Create Prometheus configuration file for localhost
-  copy:
-    dest: /opt/prometheus/prometheus.yml
-    content: |
-      global:
-        scrape_interval: 10s
-
-      scrape_configs:
-        - job_name: "test-server"
-          static_configs:
-            - targets: ["localhost:9100"]
-
-      
-    - name: Start Prometheus
-      command: >
-        nohup /opt/prometheus/prometheus 
-        --config.file=/opt/prometheus/prometheus.yml &
-      async: 100
-      poll: 0
-
-    # ---- Node Exporter Setup ----
-    - name: Download Node Exporter
-      get_url:
-        url: "https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz"
-        dest: /tmp/node_exporter.tar.gz
-
-    - name: Extract Node Exporter
-      unarchive:
-        src: /tmp/node_exporter.tar.gz
-        dest: /opt/
-        remote_src: yes
-
-    - name: Move Node Exporter files to correct location
-      command: mv /opt/node_exporter-1.9.0.linux-amd64 /opt/node_exporter
-      args:
-        removes: /opt/node_exporter-1.9.0.linux-amd64
-
-    - name: Ensure Node Exporter binary is executable
-      file:
-        path: /opt/node_exporter/node_exporter
-        mode: '0755'
-
-    - name: Start Node Exporter
-      command: >
-        nohup /opt/node_exporter/node_exporter &
-      async: 100
-      poll: 0
-
-    # ---- Grafana Installation ----
-    - name: Add Grafana repository
-      yum_repository:
-        name: grafana
-        description: Grafana Repository
-        baseurl: https://packages.grafana.com/oss/rpm
-        enabled: yes
-        gpgcheck: yes
-        gpgkey: https://packages.grafana.com/gpg.key
-
-    - name: Install Grafana
-      yum:
-        name: grafana
-        state: present
-
-    - name: Start Grafana Service
-      service:
-        name: grafana-server
-        state: started
-        enabled: yes
-
-    # ---- Firewall Rules ----
-    - name: Allow port 3000 for Grafana
-      command: firewall-cmd --permanent --add-port=3000/tcp
-
-    - name: Allow port 9090 for Prometheus
-      command: firewall-cmd --permanent --add-port=9090/tcp
-
-    - name: Allow port 9100 for Node Exporter
-      command: firewall-cmd --permanent --add-port=9100/tcp
-
-    - name: Reload Firewall Rules
-      command: firewall-cmd --reload
+        extra_opts: [--strip-components=1_
