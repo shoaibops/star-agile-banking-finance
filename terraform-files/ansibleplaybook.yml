@@ -84,9 +84,9 @@
         remote_src: yes
 
     - name: Move Node Exporter files to correct location
-      command: mv /opt/node_exporter-1.6.0.linux-amd64 /opt/node_exporter
+      command: mv /opt/node_exporter-1.9.0.linux-amd64 /opt/node_exporter
       args:
-        removes: /opt/node_exporter-1.6.0.linux-amd64
+        removes: /opt/node_exporter-1.9.0.linux-amd64
 
     - name: Ensure Node Exporter binary is executable
       file:
