@@ -30,7 +30,7 @@
     - name: Deploy Docker Container
       command: docker run -itd -p 8080:8081 shoaibpathan/banking-project-demo:3.0
 
-    # ---- Ensure directory exists before extracting Prometheus ----
+    # ---- Ensure Prometheus directory exists before extraction ----
     - name: Create Prometheus directory
       file:
         path: /opt/prometheus
@@ -61,14 +61,17 @@
         mode: '0755'
 
     - name: Start Prometheus
-  command: >
-    nohup /opt/prometheus/prometheus 
-    --config.file=/opt/prometheus/prometheus.yml &
+      command: >
+        nohup /opt/prometheus/prometheus 
+        --config.file=/opt/prometheus/prometheus.yml &
+      async: 100
+      poll: 0
 
-   - name: Download Node Exporter
-     get_url:
-      url: "https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.6.0.linux-amd64.tar.gz"
-      dest: /tmp/node_exporter.tar.gz
+    # ---- Node Exporter Setup ----
+    - name: Download Node Exporter
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.6.0.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter.tar.gz
 
     - name: Extract Node Exporter
       unarchive:
@@ -76,9 +79,23 @@
         dest: /opt/
         remote_src: yes
 
-    - name: Start Node Exporter
-      command: nohup /opt/node_exporter-linux-amd64/node_exporter &
+    - name: Move Node Exporter files to correct location
+      command: mv /opt/node_exporter-1.6.0.linux-amd64 /opt/node_exporter
+      args:
+        removes: /opt/node_exporter-1.6.0.linux-amd64
 
+    - name: Ensure Node Exporter binary is executable
+      file:
+        path: /opt/node_exporter/node_exporter
+        mode: '0755'
+
+    - name: Start Node Exporter
+      command: >
+        nohup /opt/node_exporter/node_exporter &
+      async: 100
+      poll: 0
+
+    # ---- Grafana Installation ----
     - name: Install Grafana
       yum:
         name: grafana
@@ -90,5 +107,15 @@
         state: started
         enabled: yes
 
-    - name: Allow firewall rules for monitoring
-      command: firewall-cmd --permanent --add-port=3000/tcp && firewall-cmd --permanent --add-port=9090/tcp && firewall-cmd --permanent --add-port=9100/tcp && firewall-cmd --reload
+    # ---- Firewall Rules ----
+    - name: Allow port 3000 for Grafana
+      command: firewall-cmd --permanent --add-port=3000/tcp
+
+    - name: Allow port 9090 for Prometheus
+      command: firewall-cmd --permanent --add-port=9090/tcp
+
+    - name: Allow port 9100 for Node Exporter
+      command: firewall-cmd --permanent --add-port=9100/tcp
+
+    - name: Reload Firewall Rules
+      command: firewall-cmd --reload
