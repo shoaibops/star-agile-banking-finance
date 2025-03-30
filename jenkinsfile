@@ -22,6 +22,11 @@ pipeline {
                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '/var/lib/jenkins/workspace/bankingproject/target/surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '', useWrapperFileDirectly: true])
                     }
             }
+       stage('install docker') {
+           steps {
+               sh 'sudo apt install docker.io -y'
+                    }
+                }
        stage('Create Docker Image') {
            steps {
                sh 'docker build -t shoaibpathan/banking-project-demo:3.0 .'
