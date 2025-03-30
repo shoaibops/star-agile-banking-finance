@@ -1,16 +1,32 @@
-- name : Configure Docker on EC2 Instances
-  hosts : all
+- name: Configure Docker on EC2 Instances
+  hosts: all
   become: true
-  connection : ssh
-  tasks : 
-  - name: updating apt
-    command : sudo yum update
+  tasks:
+    - name: Update yum packages
+      yum:
+        name: '*'
+        state: latest
 
-  - name : Install Docker
-    command : sudo yum install docker -y
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
 
-  - name : Start Docker Service
-    command : sudo systemctl start docker
+    - name: Start Docker Service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-  - name: Deploy Docker Container
-    command: docker run -itd -p 9084:9081 shoaibpathan/banking-project-demo:1.0
+    - name: Add EC2 user to Docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: Pull Docker Image
+      command: docker pull shoaibpathan/banking-project-demo:1.0
+
+    - name: Deploy Docker Container
+      command: docker run -itd -p 9084:9081 shoaibpathan/banking-project-demo:1.0
+
