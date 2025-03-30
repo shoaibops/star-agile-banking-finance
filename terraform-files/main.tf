@@ -7,7 +7,7 @@ resource "aws_instance" "test-server" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("./aws-key.pem")
+    private_key = file("/var/lib/jenkins/workspace/bankingproject/terraform-files/aws-key.pem")
     host        = self.public_ip
     timeout     = "2m"
     agent       = false
