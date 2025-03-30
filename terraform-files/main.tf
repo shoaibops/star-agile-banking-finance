@@ -2,7 +2,7 @@ resource "aws_instance" "test-server" {
   ami = "ami-0e35ddab05955cf57"
   instance_type = "t3.medium"
   key_name = "mykey"
-  vpc_security_group_ids = ["sg-06b4c17cdf01af9b0 "]
+  vpc_security_group_ids = ["sg-06b4c17cdf01af9b0"]
   connection {
      type = "ssh"
      user = "ec2-user"
