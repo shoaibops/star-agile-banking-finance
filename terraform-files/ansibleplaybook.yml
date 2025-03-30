@@ -74,7 +74,7 @@
     # ---- Node Exporter Setup ----
     - name: Download Node Exporter
       get_url:
-        url: "https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.6.0.linux-amd64.tar.gz"
+        url: "https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz"
         dest: /tmp/node_exporter.tar.gz
 
     - name: Extract Node Exporter
