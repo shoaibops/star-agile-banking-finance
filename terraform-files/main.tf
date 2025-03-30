@@ -1,12 +1,12 @@
 resource "aws_instance" "test-server" {
-  ami             = "ami-0e35ddab05955cf57"
-  instance_type   = "t3.medium"
+  ami             = "ami-076c6dbba59aa92e6"
+  instance_type   = "t2.micro"
   key_name        = "aws-key"
-  vpc_security_group_ids = ["sg-06b4c17cdf01af9b0"]
+  vpc_security_group_ids = ["sg-025a1c5d4b2b5cb5a"]
 
   connection {
     type        = "ssh"
-    user        = "ubuntu"
+    user        = "ec2-user"
     private_key = file("/var/lib/jenkins/workspace/bankingproject/terraform-files/aws-key.pem")
     host        = self.public_ip
     timeout     = "2m"
@@ -22,7 +22,7 @@ resource "aws_instance" "test-server" {
   }
 
   provisioner "local-exec" {
-    command = "sudo echo '[test-server]' > inventory && echo '${aws_instance.test-server.public_ip}' >> inventory"
+    command = "echo '[test-server]' > inventory && echo '${aws_instance.test-server.public_ip}' >> inventory"
   }
 
   provisioner "local-exec" {
