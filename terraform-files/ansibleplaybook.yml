@@ -1,4 +1,4 @@
-- name: Configure Docker and Monitoring on EC2 Instances
+- name: Configure Docker and Monitoring Tools on EC2 Instances
   hosts: all
   become: true
   tasks:
@@ -30,60 +30,27 @@
     - name: Deploy Docker Container
       command: docker run -itd -p 8080:8081 shoaibpathan/banking-project-demo:3.0
 
-    - name: Install dependencies for monitoring
-      yum:
-        name: [wget, tar, unzip]
-        state: present
+    # ---- FIX: Ensure directory exists before extracting Prometheus ----
+    - name: Create Prometheus directory
+      file:
+        path: /opt/prometheus-linux-amd64
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+        mode: '0755'
 
     - name: Download Prometheus
       get_url:
-        url: https://github.com/prometheus/prometheus/releases/download/v3.3.0-rc.0/prometheus-3.3.0-rc.0.linux-amd64.tar.gz
+        url: "https://github.com/prometheus/prometheus/releases/download/v3.3.0-rc.0/prometheus-3.3.0-rc.0.linux-amd64.tar.gz"
         dest: /tmp/prometheus.tar.gz
 
     - name: Extract Prometheus
       unarchive:
         src: /tmp/prometheus.tar.gz
-        dest: /opt/
+        dest: /opt/prometheus-linux-amd64
         remote_src: yes
-
-    - name: Configure Prometheus
-      copy:
-        dest: /opt/prometheus-linux-amd64/prometheus.yml
-        content: |
-          global:
-            scrape_interval: 5s
-          scrape_configs:
-            - job_name: 'node_exporter'
-              static_configs:
-                - targets: ['localhost:9100']
 
     - name: Start Prometheus
-      command: nohup /opt/prometheus-linux-amd64/prometheus --config.file=/opt/prometheus-linux-amd64/prometheus.yml &
+      command: "nohup /opt/prometheus-linux-amd64/prometheus --config.file=/opt/prometheus-linux-amd64/prometheus.yml &"
 
-    - name: Download Node Exporter
-      get_url:
-        url: https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-linux-amd64.tar.gz
-        dest: /tmp/node_exporter.tar.gz
 
-    - name: Extract Node Exporter
-      unarchive:
-        src: /tmp/node_exporter.tar.gz
-        dest: /opt/
-        remote_src: yes
-
-    - name: Start Node Exporter
-      command: nohup /opt/node_exporter-linux-amd64/node_exporter &
-
-    - name: Install Grafana
-      yum:
-        name: grafana
-        state: present
-
-    - name: Start Grafana Service
-      service:
-        name: grafana-server
-        state: started
-        enabled: yes
-
-    - name: Allow firewall rules for monitoring
-      command: firewall-cmd --permanent --add-port=3000/tcp && firewall-cmd --permanent --add-port=9090/tcp && firewall-cmd --permanent --add-port=9100/tcp && firewall-cmd --reload
