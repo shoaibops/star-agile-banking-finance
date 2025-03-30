@@ -62,10 +62,10 @@
 
     - name: Start Prometheus
       command: "nohup /opt/prometheus/prometheus --config.file=/opt/prometheus/prometheus.yml &"
-- name: Download Node Exporter
-      get_url:
-        url: https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-linux-amd64.tar.gz
-        dest: /tmp/node_exporter.tar.gz
+   - name: Download Node Exporter
+     get_url:
+      url: "https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.6.0.linux-amd64.tar.gz"
+      dest: /tmp/node_exporter.tar.gz
 
     - name: Extract Node Exporter
       unarchive:
