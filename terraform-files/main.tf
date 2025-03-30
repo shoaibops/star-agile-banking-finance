@@ -6,7 +6,7 @@ resource "aws_instance" "test-server" {
 
   connection {
     type        = "ssh"
-    user        = "ec2-user"
+    user        = "ubuntu"
     private_key = file("./aws-key.pem")
     host        = self.public_ip
     timeout     = "2m"
