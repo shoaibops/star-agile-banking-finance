@@ -25,8 +25,8 @@
         append: yes
 
     - name: Pull Docker Image
-      command: docker pull shoaibpathan/banking-project-demo:1.0
+      command: docker pull shoaibpathan/banking-project-demo:3.0
 
     - name: Deploy Docker Container
-      command: docker run -itd -p 9084:9081 shoaibpathan/banking-project-demo:1.0
+      command: docker run -itd -p 9084:9081 shoaibpathan/banking-project-demo:3.0
 
