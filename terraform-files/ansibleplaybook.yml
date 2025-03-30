@@ -121,16 +121,3 @@
         state: started
         enabled: yes
 
-    # ---- Firewall Rules ----
-    - name: Allow port 3000 for Grafana
-      command: firewall-cmd --permanent --add-port=3000/tcp
-
-    - name: Allow port 9090 for Prometheus
-      command: firewall-cmd --permanent --add-port=9090/tcp
-
-    - name: Allow port 9100 for Node Exporter
-      command: firewall-cmd --permanent --add-port=9100/tcp
-
-    - name: Reload Firewall Rules
-      command: firewall-cmd --reload
-
