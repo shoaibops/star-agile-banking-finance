@@ -1,7 +1,8 @@
-- name: Configure Docker and Monitoring Tools on EC2 Instances
+- name: Configure Docker, Prometheus, Node Exporter, and Grafana
   hosts: all
   become: true
   tasks:
+    # Docker setup
     - name: Update yum packages
       yum:
         name: '*'
@@ -30,7 +31,7 @@
     - name: Deploy Docker Container
       command: docker run -itd -p 8080:8081 shoaibpathan/banking-project-demo:3.0
 
-    # ---- Ensure Prometheus directory exists before extraction ----
+    # Prometheus setup
     - name: Create Prometheus directory
       file:
         path: /opt/prometheus
@@ -44,19 +45,14 @@
         url: "https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz"
         dest: /tmp/prometheus.tar.gz
 
-    - name: Extract Prometheus directly to /opt/prometheus
+    - name: Extract Prometheus
       unarchive:
         src: /tmp/prometheus.tar.gz
         dest: /opt/prometheus
         remote_src: yes
-        extra_opts: [--strip-components=1]  # Removes parent directory inside archive
+        extra_opts: [--strip-components=1]
 
-    - name: Ensure Prometheus binary is executable
-      file:
-        path: /opt/prometheus/prometheus
-        mode: '0755'
-
-    - name: Create Prometheus configuration file for localhost
+    - name: Create Prometheus config
       copy:
         dest: /opt/prometheus/prometheus.yml
         content: |
@@ -64,16 +60,42 @@
             scrape_interval: 10s
 
           scrape_configs:
-            - job_name: "test-server"
+            - job_name: "node-exporter"
               static_configs:
                 - targets: ["localhost:9100"]
 
-    - name: Start Prometheus
-      command: nohup /opt/prometheus/prometheus --config.file=/opt/prometheus/prometheus.yml &
-      async: 100
-      poll: 0
+    - name: Create Prometheus systemd unit file
+      copy:
+        dest: /etc/systemd/system/prometheus.service
+        content: |
+          [Unit]
+          Description=Prometheus
+          Wants=network-online.target
+          After=network-online.target
 
-    # ---- Node Exporter Setup ----
+          [Service]
+          User=ec2-user
+          ExecStart=/opt/prometheus/prometheus --config.file=/opt/prometheus/prometheus.yml
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+
+    - name: Reload systemd (Prometheus)
+      command: systemctl daemon-reexec
+
+    - name: Enable Prometheus service
+      systemd:
+        name: prometheus
+        enabled: yes
+
+    - name: Start Prometheus service
+      systemd:
+        name: prometheus
+        state: started
+
+    # Node Exporter setup
     - name: Download Node Exporter
       get_url:
         url: "https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz"
@@ -85,22 +107,43 @@
         dest: /opt/
         remote_src: yes
 
-    - name: Move Node Exporter files to correct location
+    - name: Move Node Exporter to final path
       command: mv /opt/node_exporter-1.9.0.linux-amd64 /opt/node_exporter
       args:
         removes: /opt/node_exporter-1.9.0.linux-amd64
 
-    - name: Ensure Node Exporter binary is executable
-      file:
-        path: /opt/node_exporter/node_exporter
-        mode: '0755'
+    - name: Create Node Exporter systemd unit file
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          Wants=network-online.target
+          After=network-online.target
 
-    - name: Start Node Exporter
-      command: nohup /opt/node_exporter/node_exporter &
-      async: 100
-      poll: 0
+          [Service]
+          User=ec2-user
+          ExecStart=/opt/node_exporter/node_exporter
+          Restart=always
 
-    # ---- Grafana Installation ----
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+
+    - name: Reload systemd (Node Exporter)
+      command: systemctl daemon-reexec
+
+    - name: Enable Node Exporter service
+      systemd:
+        name: node_exporter
+        enabled: yes
+
+    - name: Start Node Exporter service
+      systemd:
+        name: node_exporter
+        state: started
+
+    # Grafana setup
     - name: Add Grafana repository
       yum_repository:
         name: grafana
@@ -120,7 +163,8 @@
         name: grafana-server
         state: started
         enabled: yes
-    - name: Create dashboards directory in Grafana data path
+
+    - name: Create dashboards directory
       file:
         path: /var/lib/grafana/dashboards
         state: directory
@@ -156,6 +200,3 @@
       service:
         name: grafana-server
         state: restarted
-
-
-
