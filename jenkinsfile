@@ -23,19 +23,19 @@ pipeline {
             }
        stage('Create Docker Image') {
            steps {
-               sh 'sudo docker build -t shoaibpathan/banking-project-demo:3.0 .'
+               sh 'docker build -t shoaibpathan/banking-project-demo:3.0 .'
                     }
                 }
        stage('Docker-Login') {
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerid', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) { 
-               sh 'sudo docker login -u ${dockerlogin} -p ${dockerpassword}'
+               sh 'docker login -u ${dockerlogin} -p ${dockerpassword}'
                                    }
                         }
                 }
        stage('Push-Image') {
            steps {
-               sh 'sudo docker push shoaibpathan/banking-project-demo:3.0'
+               sh 'docker push shoaibpathan/banking-project-demo:3.0'
                      }
                 }
        stage('Config & Deployment') {
