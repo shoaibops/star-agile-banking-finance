@@ -120,4 +120,42 @@
         name: grafana-server
         state: started
         enabled: yes
+    - name: Create dashboards directory in Grafana data path
+      file:
+        path: /var/lib/grafana/dashboards
+        state: directory
+        owner: grafana
+        group: grafana
+        mode: '0755'
+
+    - name: Copy Grafana dashboard JSON
+      copy:
+        src: grafana/dashboards/system-metrics.json
+        dest: /var/lib/grafana/dashboards/system-metrics.json
+        owner: grafana
+        group: grafana
+        mode: '0644'
+
+    - name: Create provisioning directory for dashboards
+      file:
+        path: /etc/grafana/provisioning/dashboards
+        state: directory
+        owner: grafana
+        group: grafana
+        mode: '0755'
+
+    - name: Copy Grafana provisioning YAML
+      copy:
+        src: grafana/provisioning/dashboards/dashboard.yml
+        dest: /etc/grafana/provisioning/dashboards/dashboard.yml
+        owner: grafana
+        group: grafana
+        mode: '0644'
+
+    - name: Restart Grafana to apply dashboard config
+      service:
+        name: grafana-server
+        state: restarted
+
+
 
