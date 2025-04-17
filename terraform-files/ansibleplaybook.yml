@@ -1,43 +1,30 @@
-- name: Configure Docker, Prometheus, Node Exporter, and Grafana
-  hosts: all
+- name: Running Kubernetes Cluster
+  hosts: localhost
   become: true
   tasks:
-    # Docker setup
-    - name: Update yum packages
-      yum:
-        name: '*'
-        state: latest
+    - name: Clone the Healthcare Project Repository
+      git:
+        repo: "https://github.com/shoaibops/healthcare-project.git"
+        dest: "/tmp/healthcare-project"
+        clone: yes
+        update: yes
+        force: yes
 
-    - name: Install Docker
-      yum:
-        name: docker
-        state: present
+    - name: Apply Kubernetes manifests
+      command: kubectl apply -f /tmp/healthcare-project/deployment.yml
+      register: k8s_output
 
-    - name: Start Docker Service
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
-    - name: Add EC2 user to Docker group
-      user:
-        name: ec2-user
-        groups: docker
-        append: yes
-
-    - name: Pull Docker Image
-      command: docker pull shoaibpathan/banking-project-demo:3.0
-
-    - name: Deploy Docker Container
-      command: docker run -itd -p 8080:8081 shoaibpathan/banking-project-demo:3.0
+    - name: Display kubectl apply output
+      debug:
+        var: k8s_output.stdout_lines
 
     # Prometheus setup
     - name: Create Prometheus directory
       file:
         path: /opt/prometheus
         state: directory
-        owner: ec2-user
-        group: ec2-user
+        owner: ubuntu
+        group: ubuntu
         mode: '0755'
 
     - name: Download Prometheus
@@ -74,7 +61,7 @@
           After=network-online.target
 
           [Service]
-          User=ec2-user
+          User=ubuntu
           ExecStart=/opt/prometheus/prometheus --config.file=/opt/prometheus/prometheus.yml
           Restart=always
 
@@ -122,7 +109,7 @@
           After=network-online.target
 
           [Service]
-          User=ec2-user
+          User=ubuntu
           ExecStart=/opt/node_exporter/node_exporter
           Restart=always
 
